@@ -5,6 +5,7 @@ import {
   ActivityIcon,
   AlertCircleIcon,
   BarChart3Icon,
+  BotIcon,
   CalendarClockIcon,
   DatabaseIcon,
   Layers3Icon,
@@ -35,7 +36,7 @@ const snapshot = getDashboardSnapshot();
 
 const suggestions = [
   "How did signups do this week compared to last week?",
-  "Run the weekly metrics report and include MRR, activation, and churn.",
+  "Run the weekly metrics report and have the investigator check anomalies.",
   "Plot paid conversions for the last two weeks and explain the trend.",
 ];
 
@@ -43,6 +44,7 @@ const stackMoments = [
   { label: "Eve", value: "filesystem agent", icon: Layers3Icon },
   { label: "AI Gateway", value: "model routing", icon: SparklesIcon },
   { label: "Sandbox", value: "isolated Python", icon: TerminalSquareIcon },
+  { label: "Subagents", value: "investigator", icon: BotIcon },
   { label: "Workflow", value: "durable sessions", icon: WorkflowIcon },
 ];
 
@@ -99,7 +101,8 @@ export function AgentChat() {
             </div>
             <p className="mt-5 text-sm leading-6 text-muted-foreground">
               A runnable Eve analyst that reads demo SaaS data, runs sandboxed
-              analysis, and streams the durable run into this web channel.
+              analysis, delegates anomaly checks, and streams the durable run
+              into this web channel.
             </p>
           </section>
 
@@ -180,8 +183,8 @@ export function AgentChat() {
                 </h3>
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
                   Pulse will query deterministic SaaS data, run a sandboxed
-                  analysis step, and return a recording-ready summary with
-                  concrete dates.
+                  analysis step, delegate investigation when the numbers move,
+                  and return a recording-ready summary with concrete dates.
                 </p>
               </div>
             </div>
@@ -395,6 +398,18 @@ function toTimelineItem(event: StreamEvent) {
         detail: readToolResult(event.data) || "A durable step completed.",
         tone: "cyan",
       };
+    case "subagent.called":
+      return {
+        title: "Investigator delegated",
+        detail: readChildSession(event.data) || "Pulse handed the anomaly check to a child agent.",
+        tone: "gold",
+      };
+    case "subagent.completed":
+      return {
+        title: "Investigator completed",
+        detail: "The child agent returned its specialist handoff.",
+        tone: "teal",
+      };
     case "step.started":
       return { title: "Workflow step started", detail: "The durable turn advanced.", tone: "cyan" };
     case "session.waiting":
@@ -420,6 +435,13 @@ function readToolResult(data: unknown) {
   const record = asRecord(data);
   const name = typeof record?.name === "string" ? record.name : null;
   return name ? `${name} returned data to the model.` : null;
+}
+
+function readChildSession(data: unknown) {
+  const record = asRecord(data);
+  const childSessionId =
+    typeof record?.childSessionId === "string" ? record.childSessionId : null;
+  return childSessionId ? `Child session ${childSessionId} is running.` : null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
