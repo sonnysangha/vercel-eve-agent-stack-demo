@@ -183,9 +183,13 @@ textarea {
 
 .timeline-item {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.7rem;
+  grid-template-columns: 1.85rem 1fr;
+  gap: 0.75rem;
   align-items: start;
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  border-radius: calc(var(--radius) - 2px);
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  padding: 0.65rem;
   animation: timeline-row-in 520ms ease both;
 }
 
@@ -209,40 +213,79 @@ textarea {
   background-clip: padding-box;
 }
 
-.timeline-item p:first-child {
+.timeline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid currentColor;
+  border-radius: calc(var(--radius) - 3px);
+  background: color-mix(in oklch, currentColor 10%, transparent);
+  color: var(--muted-foreground);
+}
+
+.timeline-icon.teal {
+  color: var(--accent-teal);
+}
+
+.timeline-icon.gold {
+  color: var(--accent-gold);
+}
+
+.timeline-icon.cyan {
+  color: var(--accent-cyan);
+}
+
+.timeline-icon.red {
+  color: var(--destructive);
+}
+
+.timeline-eyebrow {
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.timeline-title {
+  margin-top: 0.22rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
   animation: timeline-title-settle 1.4s ease forwards;
 }
 
-.timeline-item p:last-child {
+.timeline-detail {
   display: -webkit-box;
   overflow: hidden;
+  margin-top: 0.3rem;
+  color: var(--muted-foreground);
+  font-size: 0.73rem;
+  line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   animation: timeline-detail-settle 1.4s ease forwards;
 }
 
-.timeline-dot {
-  margin-top: 0.45rem;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: var(--muted-foreground);
-}
-
-.timeline-dot.teal {
-  background: var(--accent-teal);
-}
-
-.timeline-dot.gold {
-  background: var(--accent-gold);
-}
-
-.timeline-dot.cyan {
-  background: var(--accent-cyan);
-}
-
-.timeline-dot.red {
-  background: var(--destructive);
+.timeline-meta {
+  display: inline-flex;
+  max-width: 7.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 4px);
+  background: color-mix(in oklch, var(--background) 56%, transparent);
+  padding: 0.16rem 0.35rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @keyframes timeline-row-in {

@@ -7,12 +7,15 @@ import {
   BarChart3Icon,
   BotIcon,
   CalendarClockIcon,
+  CheckCircle2Icon,
   DatabaseIcon,
   Layers3Icon,
+  MessageSquareIcon,
   PlayIcon,
   ShieldCheckIcon,
   SparklesIcon,
   TerminalSquareIcon,
+  WrenchIcon,
   WorkflowIcon,
 } from "lucide-react";
 import {
@@ -52,6 +55,16 @@ type AgentStatus = ReturnType<typeof useEveAgent>["status"];
 type StreamEvent = {
   readonly type: string;
   readonly data?: unknown;
+};
+type TimelineTone = "teal" | "gold" | "cyan" | "red" | "muted";
+type TimelineItem = {
+  readonly key: string;
+  readonly title: string;
+  readonly detail: string;
+  readonly eyebrow: string;
+  readonly meta?: string;
+  readonly tone: TimelineTone;
+  readonly icon: typeof ActivityIcon;
 };
 
 export function AgentChat() {
@@ -357,10 +370,10 @@ function Timeline({
   readonly events: readonly StreamEvent[];
   readonly isEmpty: boolean;
 }) {
-  const visible = events.slice(-40).map((event, index, list) => ({
-    ...toTimelineItem(event),
-    key: `${events.length - list.length + index}-${event.type}`,
-  }));
+  const visible = events
+    .map((event, index) => toTimelineItem(event, index))
+    .filter((event): event is TimelineItem => event !== null)
+    .slice(-40);
 
   if (isEmpty || visible.length === 0) {
     return (
@@ -375,12 +388,18 @@ function Timeline({
       <ol className="space-y-3">
         {visible.map((event) => (
           <li className="timeline-item" key={event.key}>
-            <span className={cn("timeline-dot", event.tone)} />
-            <div>
-              <p className="text-sm font-medium">{event.title}</p>
-              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-                {event.detail}
-              </p>
+            <span className={cn("timeline-icon", event.tone)}>
+              <event.icon className="size-3.5" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="timeline-eyebrow">{event.eyebrow}</p>
+                  <p className="timeline-title">{event.title}</p>
+                </div>
+                {event.meta ? <span className="timeline-meta">{event.meta}</span> : null}
+              </div>
+              <p className="timeline-detail">{event.detail}</p>
             </div>
           </li>
         ))}
@@ -389,66 +408,303 @@ function Timeline({
   );
 }
 
-function toTimelineItem(event: StreamEvent) {
+function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null {
+  const key = `${index}-${event.type}`;
+
   switch (event.type) {
+    case "session.started": {
+      const runtime = asRecord(asRecord(event.data)?.runtime);
+      const modelId = readString(runtime?.modelId);
+      const gitSha = readString(asRecord(runtime?.build)?.gitSha);
+      return {
+        key,
+        eyebrow: "session",
+        title: "Agent runtime online",
+        detail: modelId ? `Pulse is running on ${modelId}.` : "Pulse opened a durable Eve session.",
+        meta: gitSha ? gitSha.slice(0, 7) : undefined,
+        tone: "teal",
+        icon: ActivityIcon,
+      };
+    }
+    case "turn.started":
+      return {
+        key,
+        eyebrow: "turn",
+        title: "Turn started",
+        detail: `Durable workflow turn ${readString(asRecord(event.data)?.turnId) ?? "started"}.`,
+        meta: readSequenceMeta(asRecord(event.data)?.sequence),
+        tone: "cyan",
+        icon: WorkflowIcon,
+      };
     case "message.received":
-      return { title: "Message received", detail: "Eve accepted the user turn.", tone: "teal" };
+      return {
+        key,
+        eyebrow: "input",
+        title: "User prompt received",
+        detail: truncate(readString(asRecord(event.data)?.message) ?? "Eve accepted the user turn.", 92),
+        tone: "teal",
+        icon: MessageSquareIcon,
+      };
     case "actions.requested":
       return {
-        title: "Tool call requested",
-        detail: readToolNames(event.data) || "The model selected an authored tool.",
+        key,
+        eyebrow: "action",
+        title: readActionTitle(event.data),
+        detail: readActionDetail(event.data),
+        meta: readActionCount(event.data),
         tone: "gold",
+        icon: readActionIcon(event.data),
       };
     case "action.result":
       return {
-        title: "Tool result returned",
-        detail: readToolResult(event.data) || "A durable step completed.",
+        key,
+        eyebrow: "result",
+        title: readToolResultTitle(event.data),
+        detail: readToolResultDetail(event.data),
+        meta: readToolResultMeta(event.data),
         tone: "cyan",
+        icon: CheckCircle2Icon,
       };
     case "subagent.called":
       return {
+        key,
+        eyebrow: "subagent",
         title: "Investigator delegated",
-        detail: readChildSession(event.data) || "Pulse handed the anomaly check to a child agent.",
+        detail: "Pulse handed the anomaly check to a specialist child agent.",
+        meta: readChildSession(event.data),
         tone: "gold",
+        icon: BotIcon,
       };
     case "subagent.completed":
       return {
+        key,
+        eyebrow: "subagent",
         title: "Investigator completed",
-        detail: "The child agent returned its specialist handoff.",
+        detail: truncate(readString(asRecord(event.data)?.output) ?? "The child agent returned its specialist handoff.", 110),
+        meta: readString(asRecord(event.data)?.subagentName),
         tone: "teal",
+        icon: BotIcon,
       };
     case "step.started":
-      return { title: "Workflow step started", detail: "The durable turn advanced.", tone: "cyan" };
+      return {
+        key,
+        eyebrow: "workflow",
+        title: `Step ${readNumber(asRecord(event.data)?.stepIndex) ?? ""} started`,
+        detail: "Eve checkpointed the run and advanced the durable turn.",
+        tone: "cyan",
+        icon: WorkflowIcon,
+      };
+    case "step.completed":
+      return {
+        key,
+        eyebrow: "workflow",
+        title: `Step ${readNumber(asRecord(event.data)?.stepIndex) ?? ""} completed`,
+        detail: readUsageDetail(event.data),
+        meta: readCostMeta(event.data),
+        tone: "teal",
+        icon: CheckCircle2Icon,
+      };
+    case "message.completed":
+      return {
+        key,
+        eyebrow: "answer",
+        title: "Final response ready",
+        detail: truncate(readString(asRecord(event.data)?.message) ?? "Pulse finished the answer.", 110),
+        tone: "teal",
+        icon: SparklesIcon,
+      };
     case "session.waiting":
-      return { title: "Session parked", detail: "Pulse is ready for the next turn.", tone: "teal" };
+      return {
+        key,
+        eyebrow: "ready",
+        title: "Session parked",
+        detail: "Pulse is waiting durably for the next turn.",
+        tone: "teal",
+        icon: WorkflowIcon,
+      };
+    case "turn.completed":
+      return {
+        key,
+        eyebrow: "turn",
+        title: "Turn completed",
+        detail: "The durable Eve turn finished successfully.",
+        tone: "teal",
+        icon: CheckCircle2Icon,
+      };
     case "turn.failed":
     case "session.failed":
-      return { title: "Run failed", detail: "Inspect the chat error for details.", tone: "red" };
+      return {
+        key,
+        eyebrow: "error",
+        title: "Run failed",
+        detail: readString(asRecord(event.data)?.errorText) ?? "Inspect the chat error for details.",
+        tone: "red",
+        icon: AlertCircleIcon,
+      };
+    case "reasoning.appended":
+    case "message.appended":
+      return null;
     default:
-      return { title: event.type, detail: "Raw Eve stream event.", tone: "muted" };
+      return {
+        key,
+        eyebrow: "event",
+        title: humanizeEventType(event.type),
+        detail: "Eve emitted a low-level stream event.",
+        tone: "muted",
+        icon: ActivityIcon,
+      };
   }
 }
 
-function readToolNames(data: unknown) {
-  const record = asRecord(data);
-  const actions = Array.isArray(record?.actions) ? record.actions : [];
-  const names = actions
-    .map((action) => asRecord(action)?.name ?? asRecord(action)?.toolName)
-    .filter((name): name is string => typeof name === "string");
-  return names.length > 0 ? names.join(", ") : null;
+function readActionTitle(data: unknown) {
+  const names = readToolNames(data);
+  if (names.includes("investigator")) return "Subagent requested";
+  if (names.includes("run_analysis")) return "Sandbox analysis requested";
+  if (names.includes("query_metrics")) return "Metrics query requested";
+  if (names.includes("load_skill")) return "Skill context requested";
+  if (names.includes("bash")) return "Sandbox command requested";
+  return names.length > 0 ? "Tool call requested" : "Action requested";
 }
 
-function readToolResult(data: unknown) {
+function readActionDetail(data: unknown) {
+  const names = readToolNames(data);
+  if (names.length === 0) return "The model selected an Eve action.";
+  return `Calling ${formatList(names)}.`;
+}
+
+function readActionCount(data: unknown) {
+  const count = readActions(data).length;
+  return count > 1 ? `${count} calls` : undefined;
+}
+
+function readActionIcon(data: unknown) {
+  const names = readToolNames(data);
+  if (names.includes("investigator")) return BotIcon;
+  if (names.includes("run_analysis") || names.includes("bash")) return TerminalSquareIcon;
+  if (names.includes("query_metrics")) return DatabaseIcon;
+  if (names.includes("load_skill")) return SparklesIcon;
+  return WrenchIcon;
+}
+
+function readToolNames(data: unknown) {
+  return readActions(data)
+    .map((action) => readString(asRecord(action)?.name) ?? readString(asRecord(action)?.toolName))
+    .filter((name): name is string => typeof name === "string");
+}
+
+function readActions(data: unknown) {
   const record = asRecord(data);
-  const name = typeof record?.name === "string" ? record.name : null;
-  return name ? `${name} returned data to the model.` : null;
+  return Array.isArray(record?.actions) ? record.actions : [];
+}
+
+function readToolResultTitle(data: unknown) {
+  const result = asRecord(asRecord(data)?.result);
+  const name = readString(result?.toolName) ?? readString(result?.subagentName);
+  if (name === "query_metrics") return "Metrics returned";
+  if (name === "run_analysis") return "Sandbox analysis completed";
+  if (name === "load_skill") return "Definitions loaded";
+  if (name === "bash") return "Sandbox command completed";
+  if (name === "investigator") return "Investigator result returned";
+  return name ? `${name} returned` : "Action result returned";
+}
+
+function readToolResultDetail(data: unknown) {
+  const result = asRecord(asRecord(data)?.result);
+  const name = readString(result?.toolName) ?? readString(result?.subagentName);
+  const output = result?.output;
+
+  if (name === "query_metrics") {
+    const outputRecord = asRecord(output);
+    const metrics = Array.isArray(outputRecord?.metrics)
+      ? outputRecord.metrics.filter((metric): metric is string => typeof metric === "string")
+      : [];
+    const rows = Array.isArray(outputRecord?.rows) ? outputRecord.rows.length : undefined;
+    return `${formatList(metrics)} data returned${rows ? ` across ${rows} rows` : ""}.`;
+  }
+
+  if (name === "run_analysis") {
+    const outputRecord = asRecord(output);
+    return truncate(readString(outputRecord?.takeaway) ?? "Python analysis ran inside the Eve sandbox.", 110);
+  }
+
+  if (name === "load_skill") {
+    return "Pulse loaded metric definitions before answering.";
+  }
+
+  if (name === "bash") {
+    const outputRecord = asRecord(output);
+    return truncate(readString(outputRecord?.stdout) || readString(outputRecord?.stderr) || "Command completed.", 110);
+  }
+
+  return truncate(typeof output === "string" ? output : "A durable action returned data to the model.", 110);
+}
+
+function readToolResultMeta(data: unknown) {
+  const result = asRecord(asRecord(data)?.result);
+  const status = readString(asRecord(data)?.status);
+  const name = readString(result?.toolName) ?? readString(result?.subagentName);
+  if (name === "run_analysis") {
+    const sandbox = asRecord(asRecord(result?.output)?.sandbox);
+    return sandbox?.used === true ? "sandbox" : status;
+  }
+  return status;
 }
 
 function readChildSession(data: unknown) {
   const record = asRecord(data);
   const childSessionId =
     typeof record?.childSessionId === "string" ? record.childSessionId : null;
-  return childSessionId ? `Child session ${childSessionId} is running.` : null;
+  return childSessionId ? childSessionId.replace(/^wrun_/, "child ") : undefined;
+}
+
+function readUsageDetail(data: unknown) {
+  const usage = asRecord(asRecord(data)?.usage);
+  const inputTokens = readNumber(usage?.inputTokens);
+  const outputTokens = readNumber(usage?.outputTokens);
+  if (inputTokens !== undefined || outputTokens !== undefined) {
+    return `${formatInteger(inputTokens ?? 0)} input tokens, ${formatInteger(outputTokens ?? 0)} output tokens.`;
+  }
+  return "The workflow step finished and state was checkpointed.";
+}
+
+function readCostMeta(data: unknown) {
+  const cost = asRecord(asRecord(data)?.usage)?.costUsd;
+  return typeof cost === "number" ? `$${cost.toFixed(4)}` : undefined;
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" ? value : undefined;
+}
+
+function readSequenceMeta(value: unknown) {
+  const sequence = readNumber(value);
+  return sequence === undefined ? undefined : `#${sequence}`;
+}
+
+function truncate(value: string, maxLength: number) {
+  const compact = value.replace(/\s+/g, " ").trim();
+  return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}...` : compact;
+}
+
+function formatList(items: readonly string[]) {
+  if (items.length === 0) return "selected tools";
+  if (items.length === 1) return `\`${items[0]}\``;
+  return items.map((item) => `\`${item}\``).join(", ");
+}
+
+function formatInteger(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function humanizeEventType(type: string) {
+  return type
+    .split(".")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
