@@ -2,3 +2,10 @@
 .env*
 .vercel
 node_modules
+.eve
+.workflow-data
+.next
+.output
+.nitro
+dist
+*.tsbuildinfo

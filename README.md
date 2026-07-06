@@ -6,17 +6,12 @@ script: Pulse answers business-metrics questions, runs Python analysis inside an
 Eve sandbox, delegates anomaly review to a specialist subagent, and has a Monday
 weekly-report schedule.
 
-The app lives in `pulse/`. When importing this repository into Vercel, set the
-project root directory to:
-
-```txt
-pulse
-```
+The app lives at the repository root so Vercel can auto-detect it as a Next.js
+project during import.
 
 ## Local Development
 
 ```bash
-cd pulse
 nvm use
 npm install
 npm run dev
@@ -47,7 +42,7 @@ The demo uses a Vercel AI Gateway model ID in `agent/agent.ts`.
 ## Agent Folder Tour
 
 ```txt
-pulse/agent/
+agent/
   instructions.md
   agent.ts
   skills/metric-definitions.md
