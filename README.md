@@ -13,8 +13,8 @@ project during import.
 
 ```bash
 nvm use
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:3000`.
@@ -31,7 +31,7 @@ The demo uses a Vercel AI Gateway model ID in `agent/agent.ts`.
 
 ## Demo Surface
 
-- Eve filesystem-first agent in `pulse/agent`
+- Eve filesystem-first agent in `agent/`
 - AI Gateway model routing
 - Read-only `query_metrics` tool over local demo data
 - Sandbox-backed `run_analysis` Python execution
