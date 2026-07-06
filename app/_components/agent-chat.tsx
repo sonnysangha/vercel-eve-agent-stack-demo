@@ -226,8 +226,8 @@ export function AgentChat() {
             </div>
           </section>
 
-          <section className="dashboard-panel min-h-0 flex-1 p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <section className="dashboard-panel flex min-h-0 max-h-[min(42rem,calc(100dvh-18rem))] flex-1 flex-col overflow-hidden p-4">
+            <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <WorkflowIcon className="size-4 text-accent-cyan" />
                 <h2 className="section-title">Run Timeline</h2>
@@ -357,28 +357,35 @@ function Timeline({
   readonly events: readonly StreamEvent[];
   readonly isEmpty: boolean;
 }) {
-  const visible = events.slice(-10).map(toTimelineItem);
+  const visible = events.slice(-40).map((event, index, list) => ({
+    ...toTimelineItem(event),
+    key: `${events.length - list.length + index}-${event.type}`,
+  }));
 
   if (isEmpty || visible.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-border text-center text-sm text-muted-foreground">
+      <div className="flex min-h-48 flex-1 items-center justify-center rounded-md border border-dashed border-border text-center text-sm text-muted-foreground">
         Session events will appear here while Pulse works.
       </div>
     );
   }
 
   return (
-    <ol className="space-y-3">
-      {visible.map((event, index) => (
-        <li className="timeline-item" key={`${event.title}-${index}`}>
-          <span className={cn("timeline-dot", event.tone)} />
-          <div>
-            <p className="text-sm font-medium">{event.title}</p>
-            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{event.detail}</p>
-          </div>
-        </li>
-      ))}
-    </ol>
+    <div className="timeline-scroll">
+      <ol className="space-y-3">
+        {visible.map((event) => (
+          <li className="timeline-item" key={event.key}>
+            <span className={cn("timeline-dot", event.tone)} />
+            <div>
+              <p className="text-sm font-medium">{event.title}</p>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                {event.detail}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

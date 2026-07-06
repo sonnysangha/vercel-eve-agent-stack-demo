@@ -186,6 +186,39 @@ textarea {
   grid-template-columns: auto 1fr;
   gap: 0.7rem;
   align-items: start;
+  animation: timeline-row-in 520ms ease both;
+}
+
+.timeline-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+  width: 0.5rem;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--muted-foreground) 42%, transparent);
+  background-clip: padding-box;
+}
+
+.timeline-item p:first-child {
+  animation: timeline-title-settle 1.4s ease forwards;
+}
+
+.timeline-item p:last-child {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  animation: timeline-detail-settle 1.4s ease forwards;
 }
 
 .timeline-dot {
@@ -210,4 +243,35 @@ textarea {
 
 .timeline-dot.red {
   background: var(--destructive);
+}
+
+@keyframes timeline-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes timeline-title-settle {
+  0%,
+  36% {
+    color: var(--accent-teal);
+  }
+  100% {
+    color: var(--foreground);
+  }
+}
+
+@keyframes timeline-detail-settle {
+  0%,
+  36% {
+    color: var(--accent-teal);
+  }
+  100% {
+    color: var(--muted-foreground);
+  }
 }
