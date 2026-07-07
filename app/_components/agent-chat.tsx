@@ -4,7 +4,6 @@ import { useEveAgent } from "eve/react";
 import {
   ActivityIcon,
   AlertCircleIcon,
-  BarChart3Icon,
   BotIcon,
   CalendarClockIcon,
   CheckCircle2Icon,
@@ -49,6 +48,7 @@ const stackMoments = [
   { label: "Sandbox", value: "isolated Python", icon: TerminalSquareIcon },
   { label: "Subagents", value: "investigator", icon: BotIcon },
   { label: "Workflow", value: "durable sessions", icon: WorkflowIcon },
+  { label: "Vercel Connect", value: "Slack bot auth", icon: MessageSquareIcon },
 ];
 
 type AgentStatus = ReturnType<typeof useEveAgent>["status"];
@@ -56,7 +56,7 @@ type StreamEvent = {
   readonly type: string;
   readonly data?: unknown;
 };
-type TimelineTone = "teal" | "gold" | "cyan" | "red" | "muted";
+type TimelineTone = "teal" | "gold" | "cyan" | "purple" | "red" | "muted";
 type TimelineItem = {
   readonly key: string;
   readonly title: string;
@@ -99,10 +99,10 @@ export function AgentChat() {
   );
 
   return (
-    <main className="min-h-dvh overflow-hidden bg-background text-foreground">
-      <div className="mx-auto grid min-h-dvh w-full max-w-[1560px] gap-4 px-4 py-4 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
-        <aside className="flex min-h-0 flex-col gap-4">
-          <section className="dashboard-panel p-5">
+    <main className="h-dvh overflow-hidden bg-background text-foreground">
+      <div className="mx-auto grid h-full w-full max-w-[1560px] gap-4 overflow-hidden px-4 py-4 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+        <aside className="app-scroll flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+          <section className="dashboard-panel shrink-0 p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="eyebrow">Vercel Agent Stack demo</p>
@@ -119,7 +119,7 @@ export function AgentChat() {
             </p>
           </section>
 
-          <section className="dashboard-panel p-4">
+          <section className="dashboard-panel shrink-0 p-4">
             <div className="mb-4 flex items-center gap-2">
               <DatabaseIcon className="size-4 text-accent-teal" />
               <h2 className="section-title">Metrics Snapshot</h2>
@@ -130,18 +130,10 @@ export function AgentChat() {
               ))}
             </div>
           </section>
-
-          <section className="dashboard-panel p-4">
-            <div className="mb-4 flex items-center gap-2">
-              <BarChart3Icon className="size-4 text-accent-gold" />
-              <h2 className="section-title">Signup Trend</h2>
-            </div>
-            <TrendBars />
-          </section>
         </aside>
 
-        <section className="dashboard-panel flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden">
-          <header className="border-b border-border px-5 py-4">
+        <section className="dashboard-panel flex h-full min-h-0 flex-col overflow-hidden">
+          <header className="shrink-0 border-b border-border px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="eyebrow">Live Eve session</p>
@@ -180,13 +172,15 @@ export function AgentChat() {
               <AlertCircleIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
               <div>
                 <p className="font-medium">Request failed</p>
-                <p className="mt-0.5 text-muted-foreground">{agent.error.message}</p>
+                <p className="mt-0.5 text-muted-foreground">
+                  {agent.error.message}
+                </p>
               </div>
             </div>
           ) : null}
 
           {isEmpty ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center">
               <div className="max-w-2xl">
                 <div className="mx-auto flex size-14 items-center justify-center rounded-md border border-accent-teal/35 bg-accent-teal/10 text-accent-teal">
                   <ActivityIcon className="size-7" />
@@ -213,7 +207,9 @@ export function AgentChat() {
                     }
                     key={message.id}
                     message={message}
-                    onInputResponses={(inputResponses) => agent.send({ inputResponses })}
+                    onInputResponses={(inputResponses) =>
+                      agent.send({ inputResponses })
+                    }
                   />
                 ))}
               </ConversationContent>
@@ -221,13 +217,13 @@ export function AgentChat() {
             </Conversation>
           )}
 
-          <div className="border-t border-border bg-card/70 px-5 py-4">
+          <div className="shrink-0 border-t border-border bg-card/70 px-5 py-4">
             {composer}
           </div>
         </section>
 
-        <aside className="flex min-h-0 flex-col gap-4">
-          <section className="dashboard-panel p-4">
+        <aside className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+          <section className="dashboard-panel shrink-0 p-4">
             <div className="mb-4 flex items-center gap-2">
               <ShieldCheckIcon className="size-4 text-accent-teal" />
               <h2 className="section-title">Agent Stack</h2>
@@ -239,7 +235,7 @@ export function AgentChat() {
             </div>
           </section>
 
-          <section className="dashboard-panel flex min-h-0 max-h-[min(42rem,calc(100dvh-18rem))] flex-1 flex-col overflow-hidden p-4">
+          <section className="dashboard-panel flex min-h-0 flex-1 flex-col overflow-hidden p-4">
             <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <WorkflowIcon className="size-4 text-accent-cyan" />
@@ -249,7 +245,10 @@ export function AgentChat() {
                 {agent.events.length} events
               </span>
             </div>
-            <Timeline events={agent.events as readonly StreamEvent[]} isEmpty={isEmpty} />
+            <Timeline
+              events={agent.events as readonly StreamEvent[]}
+              isEmpty={isEmpty}
+            />
           </section>
         </aside>
       </div>
@@ -292,7 +291,9 @@ function MetricTile({
   return (
     <div className="metric-tile">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">{labelForMetric(comparison.metric)}</p>
+        <p className="text-sm font-medium">
+          {labelForMetric(comparison.metric)}
+        </p>
         <span
           className={cn(
             "rounded-sm px-1.5 py-0.5 font-mono text-[11px]",
@@ -318,29 +319,6 @@ function MetricTile({
   );
 }
 
-function TrendBars() {
-  const max = Math.max(...snapshot.dailySignups.map((point) => point.value));
-
-  return (
-    <div className="flex h-36 items-end gap-1.5 rounded-md border border-border bg-ink p-3">
-      {snapshot.dailySignups.map((point) => (
-        <div
-          className="group relative flex flex-1 flex-col items-center justify-end"
-          key={point.date}
-        >
-          <div
-            className="w-full rounded-sm bg-accent-teal transition-colors group-hover:bg-accent-gold"
-            style={{ height: `${Math.max(12, (point.value / max) * 100)}%` }}
-          />
-          <span className="sr-only">
-            {point.date}: {point.value} signups
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function StackMoment({
   icon: Icon,
   label,
@@ -357,7 +335,9 @@ function StackMoment({
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-medium">{label}</span>
-        <span className="block truncate text-xs text-muted-foreground">{value}</span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {value}
+        </span>
       </span>
     </div>
   );
@@ -373,7 +353,8 @@ function Timeline({
   const visible = events
     .map((event, index) => toTimelineItem(event, index))
     .filter((event): event is TimelineItem => event !== null)
-    .slice(-40);
+    .slice(-40)
+    .reverse();
 
   if (isEmpty || visible.length === 0) {
     return (
@@ -387,7 +368,7 @@ function Timeline({
     <div className="timeline-scroll">
       <ol className="space-y-3">
         {visible.map((event) => (
-          <li className="timeline-item" key={event.key}>
+          <li className={cn("timeline-item", event.tone)} key={event.key}>
             <span className={cn("timeline-icon", event.tone)}>
               <event.icon className="size-3.5" />
             </span>
@@ -397,7 +378,9 @@ function Timeline({
                   <p className="timeline-eyebrow">{event.eyebrow}</p>
                   <p className="timeline-title">{event.title}</p>
                 </div>
-                {event.meta ? <span className="timeline-meta">{event.meta}</span> : null}
+                {event.meta ? (
+                  <span className="timeline-meta">{event.meta}</span>
+                ) : null}
               </div>
               <p className="timeline-detail">{event.detail}</p>
             </div>
@@ -408,7 +391,10 @@ function Timeline({
   );
 }
 
-function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null {
+function toTimelineItem(
+  event: StreamEvent,
+  index: number,
+): TimelineItem | null {
   const key = `${index}-${event.type}`;
 
   switch (event.type) {
@@ -420,7 +406,9 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         key,
         eyebrow: "session",
         title: "Agent runtime online",
-        detail: modelId ? `Pulse is running on ${modelId}.` : "Pulse opened a durable Eve session.",
+        detail: modelId
+          ? `Pulse is running on ${modelId}.`
+          : "Pulse opened a durable Eve session.",
         meta: gitSha ? gitSha.slice(0, 7) : undefined,
         tone: "teal",
         icon: ActivityIcon,
@@ -433,7 +421,7 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         title: "Turn started",
         detail: `Durable workflow turn ${readString(asRecord(event.data)?.turnId) ?? "started"}.`,
         meta: readSequenceMeta(asRecord(event.data)?.sequence),
-        tone: "cyan",
+        tone: "purple",
         icon: WorkflowIcon,
       };
     case "message.received":
@@ -441,7 +429,11 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         key,
         eyebrow: "input",
         title: "User prompt received",
-        detail: truncate(readString(asRecord(event.data)?.message) ?? "Eve accepted the user turn.", 92),
+        detail: truncate(
+          readString(asRecord(event.data)?.message) ??
+            "Eve accepted the user turn.",
+          92,
+        ),
         tone: "teal",
         icon: MessageSquareIcon,
       };
@@ -480,7 +472,11 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         key,
         eyebrow: "subagent",
         title: "Investigator completed",
-        detail: truncate(readString(asRecord(event.data)?.output) ?? "The child agent returned its specialist handoff.", 110),
+        detail: truncate(
+          readString(asRecord(event.data)?.output) ??
+            "The child agent returned its specialist handoff.",
+          110,
+        ),
         meta: readString(asRecord(event.data)?.subagentName),
         tone: "teal",
         icon: BotIcon,
@@ -491,7 +487,7 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         eyebrow: "workflow",
         title: `Step ${readNumber(asRecord(event.data)?.stepIndex) ?? ""} started`,
         detail: "Eve checkpointed the run and advanced the durable turn.",
-        tone: "cyan",
+        tone: "purple",
         icon: WorkflowIcon,
       };
     case "step.completed":
@@ -501,15 +497,19 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         title: `Step ${readNumber(asRecord(event.data)?.stepIndex) ?? ""} completed`,
         detail: readUsageDetail(event.data),
         meta: readCostMeta(event.data),
-        tone: "teal",
-        icon: CheckCircle2Icon,
+        tone: "purple",
+        icon: WorkflowIcon,
       };
     case "message.completed":
       return {
         key,
         eyebrow: "answer",
         title: "Final response ready",
-        detail: truncate(readString(asRecord(event.data)?.message) ?? "Pulse finished the answer.", 110),
+        detail: truncate(
+          readString(asRecord(event.data)?.message) ??
+            "Pulse finished the answer.",
+          110,
+        ),
         tone: "teal",
         icon: SparklesIcon,
       };
@@ -519,7 +519,7 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         eyebrow: "ready",
         title: "Session parked",
         detail: "Pulse is waiting durably for the next turn.",
-        tone: "teal",
+        tone: "purple",
         icon: WorkflowIcon,
       };
     case "turn.completed":
@@ -528,8 +528,8 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         eyebrow: "turn",
         title: "Turn completed",
         detail: "The durable Eve turn finished successfully.",
-        tone: "teal",
-        icon: CheckCircle2Icon,
+        tone: "purple",
+        icon: WorkflowIcon,
       };
     case "turn.failed":
     case "session.failed":
@@ -537,7 +537,9 @@ function toTimelineItem(event: StreamEvent, index: number): TimelineItem | null 
         key,
         eyebrow: "error",
         title: "Run failed",
-        detail: readString(asRecord(event.data)?.errorText) ?? "Inspect the chat error for details.",
+        detail:
+          readString(asRecord(event.data)?.errorText) ??
+          "Inspect the chat error for details.",
         tone: "red",
         icon: AlertCircleIcon,
       };
@@ -580,7 +582,8 @@ function readActionCount(data: unknown) {
 function readActionIcon(data: unknown) {
   const names = readToolNames(data);
   if (names.includes("investigator")) return BotIcon;
-  if (names.includes("run_analysis") || names.includes("bash")) return TerminalSquareIcon;
+  if (names.includes("run_analysis") || names.includes("bash"))
+    return TerminalSquareIcon;
   if (names.includes("query_metrics")) return DatabaseIcon;
   if (names.includes("load_skill")) return SparklesIcon;
   return WrenchIcon;
@@ -588,7 +591,11 @@ function readActionIcon(data: unknown) {
 
 function readToolNames(data: unknown) {
   return readActions(data)
-    .map((action) => readString(asRecord(action)?.name) ?? readString(asRecord(action)?.toolName))
+    .map(
+      (action) =>
+        readString(asRecord(action)?.name) ??
+        readString(asRecord(action)?.toolName),
+    )
     .filter((name): name is string => typeof name === "string");
 }
 
@@ -616,15 +623,29 @@ function readToolResultDetail(data: unknown) {
   if (name === "query_metrics") {
     const outputRecord = asRecord(output);
     const metrics = Array.isArray(outputRecord?.metrics)
-      ? outputRecord.metrics.filter((metric): metric is string => typeof metric === "string")
+      ? outputRecord.metrics.filter(
+          (metric): metric is string => typeof metric === "string",
+        )
       : [];
-    const rows = Array.isArray(outputRecord?.rows) ? outputRecord.rows.length : undefined;
+    const rows = Array.isArray(outputRecord?.rows)
+      ? outputRecord.rows.length
+      : undefined;
     return `${formatList(metrics)} data returned${rows ? ` across ${rows} rows` : ""}.`;
   }
 
   if (name === "run_analysis") {
     const outputRecord = asRecord(output);
-    return truncate(readString(outputRecord?.takeaway) ?? "Python analysis ran inside the Eve sandbox.", 110);
+    const sandbox = asRecord(outputRecord?.sandbox);
+    const filesWritten = Array.isArray(sandbox?.filesWritten)
+      ? sandbox.filesWritten.length
+      : undefined;
+    const artifactNote = filesWritten
+      ? ` Wrote ${filesWritten} sandbox artifacts.`
+      : "";
+    return truncate(
+      `${readString(outputRecord?.takeaway) ?? "Python analysis ran inside the Eve sandbox."}${artifactNote}`,
+      110,
+    );
   }
 
   if (name === "load_skill") {
@@ -633,10 +654,20 @@ function readToolResultDetail(data: unknown) {
 
   if (name === "bash") {
     const outputRecord = asRecord(output);
-    return truncate(readString(outputRecord?.stdout) || readString(outputRecord?.stderr) || "Command completed.", 110);
+    return truncate(
+      readString(outputRecord?.stdout) ||
+        readString(outputRecord?.stderr) ||
+        "Command completed.",
+      110,
+    );
   }
 
-  return truncate(typeof output === "string" ? output : "A durable action returned data to the model.", 110);
+  return truncate(
+    typeof output === "string"
+      ? output
+      : "A durable action returned data to the model.",
+    110,
+  );
 }
 
 function readToolResultMeta(data: unknown) {
@@ -645,6 +676,10 @@ function readToolResultMeta(data: unknown) {
   const name = readString(result?.toolName) ?? readString(result?.subagentName);
   if (name === "run_analysis") {
     const sandbox = asRecord(asRecord(result?.output)?.sandbox);
+    const filesWritten = Array.isArray(sandbox?.filesWritten)
+      ? sandbox.filesWritten.length
+      : undefined;
+    if (sandbox?.used === true && filesWritten) return `${filesWritten} files`;
     return sandbox?.used === true ? "sandbox" : status;
   }
   return status;
@@ -654,7 +689,9 @@ function readChildSession(data: unknown) {
   const record = asRecord(data);
   const childSessionId =
     typeof record?.childSessionId === "string" ? record.childSessionId : null;
-  return childSessionId ? childSessionId.replace(/^wrun_/, "child ") : undefined;
+  return childSessionId
+    ? childSessionId.replace(/^wrun_/, "child ")
+    : undefined;
 }
 
 function readUsageDetail(data: unknown) {
@@ -687,7 +724,9 @@ function readSequenceMeta(value: unknown) {
 
 function truncate(value: string, maxLength: number) {
   const compact = value.replace(/\s+/g, " ").trim();
-  return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}...` : compact;
+  return compact.length > maxLength
+    ? `${compact.slice(0, maxLength - 1)}...`
+    : compact;
 }
 
 function formatList(items: readonly string[]) {
@@ -708,7 +747,9 @@ function humanizeEventType(type: string) {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 function labelForMetric(metric: string) {

@@ -24,6 +24,7 @@
   --color-accent-teal: var(--accent-teal);
   --color-accent-gold: var(--accent-gold);
   --color-accent-cyan: var(--accent-cyan);
+  --color-accent-purple: var(--accent-purple);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -56,6 +57,7 @@
   --accent-teal: oklch(0.67 0.148 178);
   --accent-gold: oklch(0.77 0.144 78);
   --accent-cyan: oklch(0.68 0.112 224);
+  --accent-purple: oklch(0.62 0.18 300);
   --radius: 0.5rem;
 }
 
@@ -84,6 +86,7 @@
     --accent-teal: oklch(0.72 0.14 178);
     --accent-gold: oklch(0.8 0.13 78);
     --accent-cyan: oklch(0.75 0.1 224);
+    --accent-purple: oklch(0.74 0.15 300);
   }
 }
 
@@ -181,6 +184,24 @@ textarea {
   opacity: 0.55;
 }
 
+.app-scroll {
+  scrollbar-gutter: stable;
+}
+
+.app-scroll::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.app-scroll::-webkit-scrollbar-thumb,
+.timeline-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--muted-foreground) 42%, transparent);
+  background-clip: padding-box;
+}
+
 .timeline-item {
   display: grid;
   grid-template-columns: 1.85rem 1fr;
@@ -193,6 +214,16 @@ textarea {
   animation: timeline-row-in 520ms ease both;
 }
 
+.timeline-item.red {
+  border-color: color-mix(in oklch, var(--destructive) 34%, var(--border));
+  background: color-mix(in oklch, var(--destructive) 7%, var(--card));
+}
+
+.timeline-item.purple {
+  border-color: color-mix(in oklch, var(--accent-purple) 38%, var(--border));
+  background: color-mix(in oklch, var(--accent-purple) 8%, var(--card));
+}
+
 .timeline-scroll {
   min-height: 0;
   flex: 1;
@@ -200,17 +231,6 @@ textarea {
   overscroll-behavior: contain;
   padding-right: 0.25rem;
   scrollbar-gutter: stable;
-}
-
-.timeline-scroll::-webkit-scrollbar {
-  width: 0.5rem;
-}
-
-.timeline-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in oklch, var(--muted-foreground) 42%, transparent);
-  background-clip: padding-box;
 }
 
 .timeline-icon {
@@ -237,7 +257,29 @@ textarea {
   color: var(--accent-cyan);
 }
 
+.timeline-icon.purple {
+  color: var(--accent-purple);
+}
+
 .timeline-icon.red {
+  color: var(--destructive);
+}
+
+.timeline-item.purple .timeline-eyebrow {
+  color: var(--accent-purple);
+}
+
+.timeline-item.purple .timeline-meta {
+  border-color: color-mix(in oklch, var(--accent-purple) 38%, var(--border));
+  color: var(--accent-purple);
+}
+
+.timeline-item.red .timeline-eyebrow {
+  color: var(--destructive);
+}
+
+.timeline-item.red .timeline-meta {
+  border-color: color-mix(in oklch, var(--destructive) 34%, var(--border));
   color: var(--destructive);
 }
 
@@ -259,6 +301,14 @@ textarea {
   animation: timeline-title-settle 1.4s ease forwards;
 }
 
+.timeline-item.red .timeline-title {
+  animation-name: timeline-title-red-settle;
+}
+
+.timeline-item.purple .timeline-title {
+  animation-name: timeline-title-purple-settle;
+}
+
 .timeline-detail {
   display: -webkit-box;
   overflow: hidden;
@@ -269,6 +319,14 @@ textarea {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   animation: timeline-detail-settle 1.4s ease forwards;
+}
+
+.timeline-item.red .timeline-detail {
+  animation-name: timeline-detail-red-settle;
+}
+
+.timeline-item.purple .timeline-detail {
+  animation-name: timeline-detail-purple-settle;
 }
 
 .timeline-meta {
@@ -313,6 +371,46 @@ textarea {
   0%,
   36% {
     color: var(--accent-teal);
+  }
+  100% {
+    color: var(--muted-foreground);
+  }
+}
+
+@keyframes timeline-title-red-settle {
+  0%,
+  36% {
+    color: var(--destructive);
+  }
+  100% {
+    color: var(--foreground);
+  }
+}
+
+@keyframes timeline-detail-red-settle {
+  0%,
+  36% {
+    color: var(--destructive);
+  }
+  100% {
+    color: var(--muted-foreground);
+  }
+}
+
+@keyframes timeline-title-purple-settle {
+  0%,
+  36% {
+    color: var(--accent-purple);
+  }
+  100% {
+    color: var(--foreground);
+  }
+}
+
+@keyframes timeline-detail-purple-settle {
+  0%,
+  36% {
+    color: var(--accent-purple);
   }
   100% {
     color: var(--muted-foreground);

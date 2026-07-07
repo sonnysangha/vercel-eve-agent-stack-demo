@@ -24,3 +24,4 @@ This agent is meant to showcase Agent Stack:
 - Vercel Workflow gives durable sessions and schedules.
 - Declared subagents give Pulse a specialist investigator with its own prompt and tool surface.
 - The Eve web channel streams the agent into the Next.js UI.
+- Vercel Connect brokers Slack bot credentials for the Slack channel without committed tokens.

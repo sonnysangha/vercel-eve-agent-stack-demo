@@ -6,9 +6,24 @@ import type {
   EveMessage,
   EveMessagePart,
 } from "eve/react";
-import { CheckCircleIcon, ExternalLinkIcon, KeyRoundIcon, XCircleIcon } from "lucide-react";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
+import {
+  CheckCircleIcon,
+  ExternalLinkIcon,
+  FileCodeIcon,
+  KeyRoundIcon,
+  TerminalSquareIcon,
+  XCircleIcon,
+} from "lucide-react";
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
 import {
   Tool,
   ToolContent,
@@ -34,7 +49,9 @@ export function AgentMessage({
   readonly canRespond: boolean;
   readonly isStreaming: boolean;
   readonly message: EveMessage;
-  readonly onInputResponses: (responses: readonly AgentInputResponse[]) => void | Promise<void>;
+  readonly onInputResponses: (
+    responses: readonly AgentInputResponse[],
+  ) => void | Promise<void>;
 }) {
   const lastTextIndex = message.parts.reduce(
     (last, part, index) => (part.type === "text" ? index : last),
@@ -50,10 +67,16 @@ export function AgentMessage({
         {message.parts.map((part, index) => (
           <AgentMessagePart
             canRespond={canRespond}
+            isLatestPart={index === message.parts.length - 1}
+            isMessageStreaming={isStreaming}
             key={partKey(part, index)}
             onInputResponses={onInputResponses}
             part={part}
-            showCaret={isStreaming && message.role === "assistant" && index === lastTextIndex}
+            showCaret={
+              isStreaming &&
+              message.role === "assistant" &&
+              index === lastTextIndex
+            }
           />
         ))}
       </MessageContent>
@@ -63,12 +86,18 @@ export function AgentMessage({
 
 function AgentMessagePart({
   canRespond,
+  isLatestPart,
+  isMessageStreaming,
   onInputResponses,
   part,
   showCaret,
 }: {
   readonly canRespond: boolean;
-  readonly onInputResponses: (responses: readonly AgentInputResponse[]) => void | Promise<void>;
+  readonly isLatestPart: boolean;
+  readonly isMessageStreaming: boolean;
+  readonly onInputResponses: (
+    responses: readonly AgentInputResponse[],
+  ) => void | Promise<void>;
   readonly part: EveMessagePart;
   readonly showCaret: boolean;
 }) {
@@ -83,7 +112,12 @@ function AgentMessagePart({
       );
     case "reasoning":
       return (
-        <Reasoning defaultOpen isStreaming={part.state === "streaming"}>
+        <Reasoning
+          defaultOpen
+          isStreaming={
+            isMessageStreaming && isLatestPart && part.state === "streaming"
+          }
+        >
           <ReasoningTrigger />
           <ReasoningContent>{part.text}</ReasoningContent>
         </Reasoning>
@@ -93,7 +127,10 @@ function AgentMessagePart({
     case "dynamic-tool":
       return (
         <Tool
-          defaultOpen={part.state === "approval-requested" || part.state === "approval-responded"}
+          defaultOpen={
+            part.state === "approval-requested" ||
+            part.state === "approval-responded"
+          }
         >
           <ToolHeader
             state={part.state}
@@ -108,6 +145,10 @@ function AgentMessagePart({
               part={part}
               onInputResponses={onInputResponses}
             />
+            <SandboxArtifactSummary
+              output={part.output}
+              toolName={part.toolName}
+            />
             <ToolOutput errorText={part.errorText} output={part.output} />
           </ToolContent>
         </Tool>
@@ -115,12 +156,22 @@ function AgentMessagePart({
   }
 }
 
-function AuthorizationPrompt({ part }: { readonly part: EveAuthorizationPart }) {
-  const isAuthorized = part.state === "completed" && part.outcome === "authorized";
+function AuthorizationPrompt({
+  part,
+}: {
+  readonly part: EveAuthorizationPart;
+}) {
+  const isAuthorized =
+    part.state === "completed" && part.outcome === "authorized";
   const isCompleted = part.state === "completed";
-  const Icon = isAuthorized ? CheckCircleIcon : isCompleted ? XCircleIcon : KeyRoundIcon;
+  const Icon = isAuthorized
+    ? CheckCircleIcon
+    : isCompleted
+      ? XCircleIcon
+      : KeyRoundIcon;
   const instructions = part.authorization?.instructions;
-  const shouldShowInstructions = instructions !== undefined && instructions !== part.description;
+  const shouldShowInstructions =
+    instructions !== undefined && instructions !== part.description;
 
   return (
     <div
@@ -148,7 +199,9 @@ function AuthorizationPrompt({ part }: { readonly part: EveAuthorizationPart }) 
         </span>
         <div className="min-w-0 flex-1 space-y-2">
           <p className="font-medium text-sm">{authorizationTitle(part)}</p>
-          <p className="text-muted-foreground text-sm">{authorizationDescription(part)}</p>
+          <p className="text-muted-foreground text-sm">
+            {authorizationDescription(part)}
+          </p>
           {shouldShowInstructions ? (
             <p className="text-muted-foreground text-sm">{instructions}</p>
           ) : null}
@@ -167,6 +220,74 @@ function AuthorizationPrompt({ part }: { readonly part: EveAuthorizationPart }) 
                 Sign in with {part.displayName}
               </a>
             </Button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SandboxArtifactSummary({
+  output,
+  toolName,
+}: {
+  readonly output: EveDynamicToolPart["output"];
+  readonly toolName: string;
+}) {
+  if (toolName !== "run_analysis") {
+    return null;
+  }
+
+  const record = asRecord(output);
+  const sandbox = asRecord(record?.sandbox);
+  if (sandbox?.used !== true) {
+    return null;
+  }
+
+  const filesWritten = readStringArray(sandbox.filesWritten);
+  const command = readString(sandbox.command);
+  const sandboxId = readString(sandbox.id);
+  const stdout = readString(sandbox.stdout);
+
+  return (
+    <div className="rounded-md border border-accent-teal/30 bg-accent-teal/5 p-3">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-accent-teal/10 text-accent-teal">
+          <TerminalSquareIcon className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-medium text-sm">Python ran in the Eve sandbox</p>
+            {sandboxId ? (
+              <code className="rounded-sm bg-background/80 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                {sandboxId}
+              </code>
+            ) : null}
+          </div>
+          {command ? (
+            <code className="mt-2 block truncate rounded-sm bg-background/80 px-2 py-1 font-mono text-[11px] text-muted-foreground">
+              {command}
+            </code>
+          ) : null}
+          {filesWritten.length > 0 ? (
+            <div className="mt-3 grid gap-1.5">
+              {filesWritten.map((path) => (
+                <div
+                  className="flex min-w-0 items-center gap-2 rounded-sm bg-background/65 px-2 py-1 text-xs"
+                  key={path}
+                >
+                  <FileCodeIcon className="size-3.5 shrink-0 text-accent-teal" />
+                  <span className="truncate font-mono text-muted-foreground">
+                    {path}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {stdout ? (
+            <p className="mt-3 line-clamp-2 text-xs leading-5 text-muted-foreground">
+              {stdout}
+            </p>
           ) : null}
         </div>
       </div>
@@ -195,7 +316,9 @@ function authorizationDescription(part: EveAuthorizationPart): string {
   return `${part.displayName} authorization ${formatAuthorizationOutcome(part.outcome)}${tail}.`;
 }
 
-function formatAuthorizationOutcome(outcome: NonNullable<EveAuthorizationPart["outcome"]>): string {
+function formatAuthorizationOutcome(
+  outcome: NonNullable<EveAuthorizationPart["outcome"]>,
+): string {
   switch (outcome) {
     case "authorized":
       return "authorized";
@@ -214,7 +337,9 @@ function InputRequestActions({
   part,
 }: {
   readonly canRespond: boolean;
-  readonly onInputResponses: (responses: readonly AgentInputResponse[]) => void | Promise<void>;
+  readonly onInputResponses: (
+    responses: readonly AgentInputResponse[],
+  ) => void | Promise<void>;
   readonly part: EveDynamicToolPart;
 }) {
   const inputRequest = part.toolMetadata?.eve?.inputRequest;
@@ -232,7 +357,10 @@ function InputRequestActions({
       <p className="text-muted-foreground text-sm">{inputRequest.prompt}</p>
       {inputResponse ? (
         <p className="font-medium text-sm">
-          Responded: {selectedOption?.label ?? inputResponse.text ?? inputResponse.optionId}
+          Responded:{" "}
+          {selectedOption?.label ??
+            inputResponse.text ??
+            inputResponse.optionId}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -270,4 +398,20 @@ function partKey(part: EveMessagePart, index: number): string {
     default:
       return `${part.type}:${index}`;
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }

@@ -144,11 +144,11 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger> & 
 };
 
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
-  if (isStreaming || duration === 0) {
+  if (isStreaming) {
     return <Shimmer duration={1}>Thinking...</Shimmer>;
   }
-  if (duration === undefined) {
-    return <p>Thought for a few seconds</p>;
+  if (duration === undefined || duration === 0) {
+    return <p>Reasoning complete</p>;
   }
   return <p>Thought for {duration} seconds</p>;
 };
@@ -193,7 +193,7 @@ const streamdownPlugins = { cjk, code, math, mermaid };
 export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
   <CollapsibleContent
     className={cn(
-      "mt-4 text-sm",
+      "app-scroll mt-4 max-h-72 overflow-y-auto pr-2 text-sm",
       "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
       className,
     )}
